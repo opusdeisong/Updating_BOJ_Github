@@ -14,10 +14,12 @@ url = "https://www.acmicpc.net/"
 
 # 웹사이트 방문
 driver.get(url)
-
-t = input()
+print("위에 존재하는 Problem_list에 푸신 문제 목록을 첨부하십시오. 이 기능은 추후 자동화 예정입니다.")
+id = input("ID를 입력해주세요.")
 for i in tqdm(problem_list, desc="Processing"):
-    url = f"https://www.acmicpc.net/status?from_mine=1&problem_id={i}&user_id=opusdeisong"
+    url = f"https://www.acmicpc.net/status?from_mine=1&problem_id={i}&user_id={id}"
+    driver.get(url)
     time.sleep(5)
+
 # 웹 드라이버 종료
 driver.quit()
