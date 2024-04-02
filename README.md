@@ -6,7 +6,7 @@
 
 1. 프로그램을 실행합니다.
 2. 백준 계정 ID를 입력하고 '입력' 버튼을 클릭합니다.
-3. 백준 허브 확장 프로그램을 크롬에 설치합니다. [설치 링크](https://chrome.google.com/webstore/detail/%EB%B0%B1%EC%A4%80%ED%97%88%EB%B8%8Cbaekjoonhub/ccammcjdkpgjmcpijpahlehmapgmphmk?utm_source=ext_app_menu)
+3. 백준 허브 확장 프로그램을 크롬에 설치합니다. [설치 링크](https://g.co/kgs/RFHU5JE)
 4. 백준 허브에 본인의 깃허브 계정과 레포지토리를 연결합니다.
 5. 본인의 백준 계정에 로그인한 후 '시작' 버튼을 클릭합니다.
 6. 자동화 과정이 완료되면 '확인' 버튼을 클릭하여 프로그램을 종료합니다.
