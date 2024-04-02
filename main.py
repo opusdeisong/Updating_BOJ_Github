@@ -93,7 +93,7 @@ class BaekjoonHub(QWidget):
 
             # 백준 허브 설치 및 사용 안내 메시지
             text = """
-            1단계 : 백준 허브를 확장프로그램으로 크롬에서 설치하세요. 링크 : https://chrome.google.com/webstore/detail/%EB%B0%B1%EC%A4%80%ED%97%88%EB%B8%8Cbaekjoonhub/ccammcjdkpgjmcpijpahlehmapgmphmk?utm_source=ext_app_menu
+            1단계 : 백준 허브를 확장프로그램으로 크롬에서 설치하세요. 링크 : https://g.co/kgs/RFHU5JE
             2단계 : 백준 허브에 본인의 깃허브 계정과 레포지토리를 연결하세요.
             3단계 : 본인의 백준 계정에 로그인 한 후 시작 버튼을 누르세요.
             """
