@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QTextEdit, QProgressBar, QHBoxLayout
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
@@ -8,6 +8,56 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
+
+class InputIDThread(QThread):
+    finished = pyqtSignal(str)
+
+    def __init__(self, driver, ID):
+        super().__init__()
+        self.driver = driver
+        self.ID = ID
+
+    def run(self):
+        try:
+            url = f"https://www.acmicpc.net/user/{self.ID}"
+            self.driver.get(url)
+            selector = "body > div.wrapper > div.container.content > div.row > div:nth-child(2) > div > div.col-md-9 > div:nth-child(2) > div.panel-body > div"
+
+            try:
+                element = WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                )
+                text = element.text.strip()
+                problem_list = text.split()
+                self.finished.emit(', '.join(problem_list))
+            except:
+                self.finished.emit("선택자에 해당하는 요소를 찾을 수 없습니다.")
+        except Exception as e:
+            self.finished.emit(f"오류 발생: {str(e)}")
+
+class AutomationThread(QThread):
+    progress = pyqtSignal(int)
+    finished = pyqtSignal(str)
+
+    def __init__(self, driver, problem_list, ID):
+        super().__init__()
+        self.driver = driver
+        self.problem_list = problem_list
+        self.ID = ID
+
+    def run(self):
+        try:
+            total_problems = len(self.problem_list)
+            for i, problem in enumerate(self.problem_list, 1):
+                url = f"https://www.acmicpc.net/status?from_mine=1&problem_id={problem}&user_id={self.ID}"
+                self.driver.get(url)
+                time.sleep(5)
+                progress = int((i / total_problems) * 100)
+                self.progress.emit(progress)
+
+            self.finished.emit("자동화가 완료되었습니다.")
+        except Exception as e:
+            self.finished.emit(f"오류 발생: {str(e)}")
 
 class BaekjoonHub(QWidget):
     def __init__(self):
@@ -70,54 +120,42 @@ class BaekjoonHub(QWidget):
 
     def inputID(self):
         try:
-            # 크롬 드라이버가 없으면 새로 생성
             if not self.driver:
                 self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
             ID = self.idInput.text()
-            url = f"https://www.acmicpc.net/user/{ID}"
-            self.driver.get(url)
-            selector = "body > div.wrapper > div.container.content > div.row > div:nth-child(2) > div > div.col-md-9 > div:nth-child(2) > div.panel-body > div"
+            self.inputIDThread = InputIDThread(self.driver, ID)
+            self.inputIDThread.finished.connect(self.handleInputIDFinished)
+            self.inputIDThread.start()
+        except Exception as e:
+            self.resultText.append(f"오류 발생: {str(e)}")
 
-            try:
-                # 선택자에 해당하는 요소가 나타날 때까지 최대 10초 대기
-                element = WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, selector))
-                )
-                text = element.text.strip()
-                problem_list = text.split()
-                self.problemListText.append(', '.join(problem_list))
-                self.resultText.append("문제 리스트를 성공적으로 추출했습니다.")
-            except:
-                self.resultText.append("선택자에 해당하는 요소를 찾을 수 없습니다.")
-
-            # 백준 허브 설치 및 사용 안내 메시지
+    def handleInputIDFinished(self, result):
+        self.problemListText.append(result)
+        if "선택자에 해당하는 요소를 찾을 수 없습니다." not in result and "오류 발생" not in result:
+            self.resultText.append("문제 리스트를 성공적으로 추출했습니다.")
             text = """
             1단계 : 백준 허브를 확장프로그램으로 크롬에서 설치하세요. 링크 : https://g.co/kgs/RFHU5JE
             2단계 : 백준 허브에 본인의 깃허브 계정과 레포지토리를 연결하세요.
             3단계 : 본인의 백준 계정에 로그인 한 후 시작 버튼을 누르세요.
             """
             self.resultText.append(text)
-        except Exception as e:
-            self.resultText.append(f"오류 발생: {str(e)}")
 
     def startAutomation(self):
         try:
             problem_list = self.problemListText.toPlainText().split(', ')
             ID = self.idInput.text()
 
-            total_problems = len(problem_list)
-            for i, problem in enumerate(problem_list, 1):
-                url = f"https://www.acmicpc.net/status?from_mine=1&problem_id={problem}&user_id={ID}"
-                self.driver.get(url)
-                time.sleep(5)
-                progress = int((i / total_problems) * 100)  # 진행률을 정수로 변환
-                self.progressBar.setValue(progress)
-
-            self.resultText.append("자동화가 완료되었습니다.")
-            self.confirmButton.setEnabled(True)
+            self.automationThread = AutomationThread(self.driver, problem_list, ID)
+            self.automationThread.progress.connect(self.progressBar.setValue)
+            self.automationThread.finished.connect(self.handleAutomationFinished)
+            self.automationThread.start()
         except Exception as e:
             self.resultText.append(f"오류 발생: {str(e)}")
+
+    def handleAutomationFinished(self, result):
+        self.resultText.append(result)
+        self.confirmButton.setEnabled(True)
 
     def closeEvent(self, event):
         # 윈도우 종료 시 크롬 드라이버 종료
